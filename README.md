@@ -1,1 +1,2 @@
-# automatin-aws-with-python
+Learning to automate AWS using Python
+# automating-aws-with-python
