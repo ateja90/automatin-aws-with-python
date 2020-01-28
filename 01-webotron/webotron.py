@@ -1,10 +1,12 @@
 import boto3
 import click
 from botocore.exceptions import ClientError
+from pathlib import Path
+import mimetypes
 
 # Creates a Session using the AWS configuration file using pythonAutomation as the credential
 # us-east-1 is defined as the region in the pythonAutomation configuration file
-session = boto3.Session(profile_name = 'pythonAutomation')
+session = boto3.Session(profile_name='pythonAutomation')
 
 # Call the s3 resoruce within the session craeted above
 s3 = session.resource('s3')
@@ -38,9 +40,8 @@ def setup_bucket(bucket):
     "Create and configure S3 bucket"
     s3_bucket = None
     try:
-        s3_bucket= s3.create_bucket(
-            Bucket=bucket,
-            CreateBucketConfiguration = {LocationConstraint: session.region_name}
+        s3_bucket = s3.create_bucket(
+            Bucket=bucket
         )
     # Create an exception that when ClientError is defined as 'e'
     except ClientError as e:
@@ -79,7 +80,35 @@ def setup_bucket(bucket):
 
     return
 
-setup_bucket()
+def upload_file(s3_bucket, path, key):
+    content_type = mimetypes.guess_type(key)[0] or 'text/plain'
+    
+    s3_bucket.upload_file(
+        path,
+        key,
+        ExtraArgs = {
+            'ContentType': 'text/html'
+        })
+
+@cli.command('sync')
+@click.argument('pathname', type=click.Path(exists=True))
+@click.argument('bucket')
+def sync(pathname, bucket):
+    "Sync contents of PATHNAME to BUCKET"
+    s3_bucket = s3.Bucket(bucket)
+
+    # When the sync function is called, root will take the "pathname" argument and expand the full user context
+    # of the folder (e.g. C:\Users\Abhishek.Masabattula), then resolve it to show the full path name.
+    # This makes it possible to use "./kitten_web" as the pathname and still have the function resolve the full
+    # name of the directory
+    root = Path(pathname).expanduser().resolve()
+
+    def handle_directory(target):
+        for p in target.iterdir():
+            if p.is_dir(): handle_directory(p)
+            if p.is_file(): upload_file(s3_bucket, str(p), str(p.relative_to(root)))
+
+    handle_directory(root)
 
 if __name__ == '__main__':
     cli()
