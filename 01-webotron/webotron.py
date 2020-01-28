@@ -39,7 +39,7 @@ def setup_bucket(bucket):
     s3_bucket = None
     try:
         s3_bucket= s3.create_bucket(
-            Bucket='Abhishek_PythonAutomationWebsite',
+            Bucket=bucket,
             CreateBucketConfiguration = {LocationConstraint: session.region_name}
         )
     # Create an exception that when ClientError is defined as 'e'
