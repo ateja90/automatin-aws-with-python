@@ -10,3 +10,4 @@ Webotron now has the following features:
 - List all S3 buckets
 - List all objects in an S3 bucket based on user input
 - Create bucket and setup website
+- Upload files to S3 bucket
