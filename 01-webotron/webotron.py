@@ -15,20 +15,30 @@ import boto3
 import click
 from bucket import BucketManager
 
+session = None
+bucket_manager = None
 # Session created using pythonAutomation credential
 # Session created using us-east-1 as the region defined in AWS config
 # us-east-1 is defined as the region in the pythonAutomation configuration file
-session = boto3.Session(profile_name='pythonAutomation')
-bucket_manager = BucketManager(session)
+
 
 # Define a click group called 'cli' to be used by the functions below
 # click.group is the same as click.command,
 # except the command class (cls) is set to "Group"
-@click.group()
-def cli():
-    """Webotron deploys websites to AWS"""
-    pass
 
+@click.group()
+@click.option('--profile', default=None, help="Use a give AWS profile")
+def cli(profile):
+    """Webotron deploys websites to AWS"""
+    global session, bucket_manager
+
+    session_cfg = {}
+    if profile:
+        session_cfg['profile_name'] = profile
+
+    # '**' allows you to pass in a dictionary as an argument to a function
+    session = boto3.Session(**session_cfg)
+    bucket_manager = BucketManager(session)
 
 # the @cli will transfer the command to the cli group above.
 # If you don't give the click command a name (in green text),
@@ -81,7 +91,7 @@ def setup_bucket(bucket):
 def sync_bucket(pathname, bucket):
     """Sync contents of PATHNAME to BUCKET"""
     bucket_manager.sync_bucket(pathname, bucket)
-
+    print(bucket_manager.get_bucket_url(bucket_manager.s3.Bucket(bucket)))
 
 # __main__ is the script in this file
 if __name__ == '__main__':
